@@ -27,6 +27,7 @@ public class Messages {
 
   /* DISCORD */
   public static String JOIN_DISCORD = "Join our discord at %s";
+  public static String DISCORD_CHAT_FORMAT = "**%s** » %s";
   public static String SERVER_STARTED = ":white_check_mark: **Server has started**";
   public static String SERVER_STOPPED = ":octagonal_sign: **Server has stopped**";
 

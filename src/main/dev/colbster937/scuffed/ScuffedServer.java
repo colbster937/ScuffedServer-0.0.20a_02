@@ -128,6 +128,10 @@ public class ScuffedServer {
         ScuffedUtils.setField(this.server, "verifyNames", "false");
     }
 
+    public void shutdown() {
+        this.discordClient.sendMessage(Messages.SERVER_STOPPED);
+    }
+
     public boolean handleCommand(ScuffedPlayer player, String commandString) {
         String[] command = commandString.split(" ");
         if (ScuffedUtils.isLoginCommand(commandString) == 2) {
@@ -276,14 +280,13 @@ public class ScuffedServer {
     }
 
     public void sendChat(String playerDisplay, String playerName, int playerID, String message, String messageType) {
-        String msg = String.format(Messages.CHAT_FORMAT, playerName, message);
-        logger.info("[" + messageType + "] " + msg);
+        logger.info("[" + messageType + "] " + String.format(Messages.CHAT_FORMAT, playerName, message));
         this.server.sendLoggedInPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(playerID), String.format(Messages.CHAT_FORMAT, playerDisplay, message)});
         if (messageType != "DISCORD") {
             if (discordProperties.webhookType) {
                 this.discordClient.send(playerName, message);
             } else {
-                this.discordClient.sendMessage(msg);
+                this.discordClient.sendMessage(String.format(Messages.DISCORD_CHAT_FORMAT, playerName, message));
             }
         }
     }

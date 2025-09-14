@@ -1,4 +1,5 @@
 .DS_Store
+.vscode
 build
 bin
 gradlew
@@ -6,5 +7,4 @@ gradlew.bat
 gradle
 .gradle
 mcp/
-!mcp/decompile.sh
 store

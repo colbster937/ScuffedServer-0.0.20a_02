@@ -2,7 +2,7 @@ package dev.colbster937.scuffed.discord;
 
 import java.awt.Color;
 import java.util.List;
-
+import java.util.EnumSet;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.Message.MentionType;
 import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -73,7 +74,10 @@ public class DiscordClient extends ListenerAdapter {
   public void sendMessage(String content) {
     TextChannel ch = jda.getTextChannelById(properties.channel);
     if (ch != null) {
-      ch.sendMessage(content).queue();
+      MessageCreateBuilder mb = new MessageCreateBuilder()
+        .setAllowedMentions(EnumSet.noneOf(MentionType.class))
+        .setContent(content);
+      ch.sendMessage(mb.build()).queue();
     }
   }
 
@@ -95,7 +99,7 @@ public class DiscordClient extends ListenerAdapter {
         sb.append(",\"username\":\"").append(username.replace("\"", "\\\"")).append("\"");
       }
       sb.append(",\"avatar_url\":\"").append(properties.avatar.replace("\"", "\\\"")).append("\"");
-      sb.append(",\"allowed_mentions\":{\"parse\":[]}}");
+      sb.append(",\"allowed_mentions\":{\"parse\":[],\"users\":[],\"roles\":[],\"replied_user\":false}}");
       String json = sb.toString();
 
       URL url = new URL(properties.webhook);
@@ -160,7 +164,7 @@ public class DiscordClient extends ListenerAdapter {
       properties.avatar
     );
 
-    MessageCreateBuilder mb = new MessageCreateBuilder().addEmbeds(eb.build());
+    MessageCreateBuilder mb = new MessageCreateBuilder().setAllowedMentions(EnumSet.noneOf(MentionType.class)).addEmbeds(eb.build());
     ch.sendMessage(mb.build()).queue();
   }
 }

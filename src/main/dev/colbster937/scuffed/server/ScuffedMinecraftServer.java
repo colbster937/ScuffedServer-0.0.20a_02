@@ -21,6 +21,14 @@ public class ScuffedMinecraftServer extends MinecraftServer {
         staticScuffedMinecraftServer = this;
         staticScuffedServer = new ScuffedServer(this);
         this.scuffedServer = getInstance();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                this.scuffedServer.shutdown();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }));
     }
 
     public static ScuffedServer getInstance() {
