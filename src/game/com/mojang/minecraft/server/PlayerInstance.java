@@ -135,14 +135,15 @@ public final class PlayerInstance {
 				} else {
 					PlayerInstance var11 = this.minecraft.getPlayerByName(var3);
 					if(var11 != null) {
-						/* THE FOLLOWING LINE HAS BEEN MODIFIED FOR SCUFFEDSERVER*/
+						/* THE FOLLOWING LINE HAS BEEN MODIFIED FOR SCUFFEDSERVER */
 						this.kick(String.format(Messages.ALREADY_PLAYING, var11.name));
 					}
 
 					logger.info(this + " logged in as " + var3);
-					if(var6 != 6) {
-						this.kick("Wrong protocol version.");
-					} else if(this.minecraft.banned.containsPlayer(var3)) {
+					/* THE FOLLOWING 3 LINES HAVE BEEN MODIFIED FOR SCUFFEDSERVER */
+					// if(var6 != 6) {
+					//	this.kick("Wrong protocol version.");
+					/* } else */ if(this.minecraft.banned.containsPlayer(var3)) {
 						this.kick("You\'re banned!");
 					} else {
 						this.onlyIP = true;

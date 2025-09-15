@@ -1,5 +1,6 @@
 package dev.colbster937.scuffed.server;
 
+import com.mojang.minecraft.net.Packet;
 import com.mojang.minecraft.server.PlayerInstance;
 
 import dev.colbster937.scuffed.Messages;
@@ -29,9 +30,9 @@ public class ScuffedPlayer {
 	    if (!this.loggedIn) {
             if ((System.currentTimeMillis() - this.loginRemindTime >= 5000L) || force) {
                 if (ScuffedUtils.isRegistered(this.player.name)) {
-                    this.player.sendChatMessage(Messages.LOGIN_REMINDER);
+                    this.sendColoredChat(Messages.LOGIN_REMINDER);
                 } else {
-                    this.player.sendChatMessage(Messages.REGISTER_REMINDER);
+                    this.sendColoredChat(Messages.REGISTER_REMINDER);
                 }
                 this.loginRemindTime = System.currentTimeMillis();
             }
@@ -45,5 +46,9 @@ public class ScuffedPlayer {
             this.player.kick("You must log in within " + this.loginTimeout + " seconds!");
             return;
         }
+    }
+
+    public void sendColoredChat(String message) {
+        this.player.sendPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(0), message});
     }
 }

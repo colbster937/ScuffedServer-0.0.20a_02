@@ -62,8 +62,7 @@ public class DiscordClient extends ListenerAdapter {
     if (e.getChannel().getId().equals(properties.channel)) {
       String message = e.getMessage().getContentDisplay();
       if (message.equalsIgnoreCase("playerlist") || message.equalsIgnoreCase("players")) {
-        String players = server.getPlayers();
-        sendMessage("```" + String.format(Messages.ONLINE_PLAYERS, players) + "```");
+        sendMessage("```" + String.format(Messages.ONLINE_PLAYERS, server.getPlayers()) + "```");
       } else {
         String name = e.getAuthor().getName();
         server.sendChat("&b" + name + "&f", name, 0, message, "DISCORD");

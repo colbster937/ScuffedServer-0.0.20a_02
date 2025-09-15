@@ -7,6 +7,7 @@ import com.mojang.minecraft.level.LevelIO;
 import com.mojang.minecraft.level.levelgen.LevelGen;
 import com.mojang.minecraft.net.Packet;
 
+/* THE FOLLOWING IMPORT HAS BEEN ADDED FOR SCUFFEDSERVER */
 import dev.colbster937.scuffed.server.ScuffedMinecraftServer;
 
 import java.io.File;

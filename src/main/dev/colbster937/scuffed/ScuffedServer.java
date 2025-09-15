@@ -7,7 +7,10 @@ import java.io.FileWriter;
 import java.nio.file.Files;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -133,18 +136,22 @@ public class ScuffedServer {
     }
 
     public boolean handleCommand(ScuffedPlayer player, String commandString) {
+		if (!player.loggedIn && ScuffedUtils.isLoginCommand(commandString) == 0) {
+		    player.sendColoredChat(Messages.NOT_LOGGED_IN);
+            return true;
+        }
         String[] command = commandString.split(" ");
         if (ScuffedUtils.isLoginCommand(commandString) == 2) {
             if (ScuffedUtils.isRegistered(player.player.name)) {
-                player.player.sendChatMessage(Messages.ALREADY_REGISTERED);
+                player.sendColoredChat(Messages.ALREADY_REGISTERED);
                 return true;
             }
             if (command.length != 3) {
-                player.player.sendChatMessage("Usage: " + command[0] + " <password> <password>");
+                player.sendColoredChat("Usage: " + command[0] + " <password> <password>");
                 return true;
             }
             if (!command[1].equals(command[2])) {
-                player.player.sendChatMessage(Messages.NO_PASSWORD_MATCH);
+                player.sendColoredChat(Messages.NO_PASSWORD_MATCH);
                 return true;
             }
             try {
@@ -152,25 +159,25 @@ public class ScuffedServer {
                 File file = new File("users", player.player.name + ".txt");
                 file.getParentFile().mkdirs();
                 Files.write(file.toPath(), hash.getBytes());
-                player.player.sendChatMessage(Messages.REGISTER_SUCCESS);
+                player.sendColoredChat(Messages.REGISTER_SUCCESS);
                 player.registered = true;
                 this.login(player, true);
             } catch (Exception e) {
-                player.player.sendChatMessage(Messages.REGISTER_FAIL);
+                player.sendColoredChat(Messages.REGISTER_FAIL);
             }
             return true;
         } else if (ScuffedUtils.isLoginCommand(commandString) == 1) {
             if (player.loggedIn) {
-                player.player.sendChatMessage(Messages.ALREADY_LOGGED_IN);
+                player.sendColoredChat(Messages.ALREADY_LOGGED_IN);
                 return true;
             }
             if (command.length != 2) {
-                player.player.sendChatMessage("Usage: " + command[0] + " <password>");
+                player.sendColoredChat("Usage: " + command[0] + " <password>");
                 return true;
             }
             try {
                 if (!ScuffedUtils.isRegistered(player.player.name)) {
-                    player.player.sendChatMessage(Messages.NOT_REGISTERED);
+                    player.sendColoredChat(Messages.NOT_REGISTERED);
                     return true;
                 }
                 String storedHash = new String(Files.readAllBytes(new File("users", player.player.name + ".txt").toPath())).trim();
@@ -178,46 +185,51 @@ public class ScuffedServer {
                 if (storedHash.equals(inputHash)) {
                     this.login(player, true);
                 } else {
-                    player.player.sendChatMessage(Messages.INCORRECT_PASSWORD);
+                    player.sendColoredChat(Messages.INCORRECT_PASSWORD);
                 }
             } catch (Exception e) {
-                player.player.sendChatMessage(Messages.LOGIN_FAIL);
+                player.sendColoredChat(Messages.LOGIN_FAIL);
             }
             return true;
-        } else if ((ScuffedUtils.isCommand(commandString, "/sponge") || ScuffedUtils.isCommand(commandString, "/drain"))) {
-            if (ScuffedUtils.isAdmin(this.server, player.player.name)) {
-                DurationTracker durationTracker = new DurationTracker(TimeUnit.MILLISECONDS);
-                int count = 0;
-                player.player.sendChatMessage(String.format(Messages.DRAIN_DONE, count, durationTracker.end()));
-                return true;
-            } else {
-                player.player.sendChatMessage(Messages.NO_PERMISSION);
-                return true;
+        } else if ((ScuffedUtils.isCommand(commandString, "/sponge") || ScuffedUtils.isCommand(commandString, "/drain")) && ScuffedUtils.isAdmin(this.server, player.player.name)) {
+            DurationTracker durationTracker = new DurationTracker(TimeUnit.MILLISECONDS);
+            int count = 0;
+            player.sendColoredChat(String.format(Messages.DRAIN_DONE, count, durationTracker.end()));
+            return true;
+        } else if ((ScuffedUtils.isCommand(commandString, "/reload") || ScuffedUtils.isCommand(commandString, "/rl")) && ScuffedUtils.isAdmin(this.server, player.player.name)) {
+            DurationTracker durationTracker = new DurationTracker(TimeUnit.MILLISECONDS);
+            this.reloadOverrides();
+            this.discordProperties.reload();
+            player.sendColoredChat(String.format(Messages.RELOADED, durationTracker.end()));
+            return true;
+        } else if ((ScuffedUtils.isCommand(commandString, "/say") || ScuffedUtils.isCommand(commandString, "/broadcast") || ScuffedUtils.isCommand(commandString, "/bc")) && ScuffedUtils.isAdmin(this.server, player.player.name)) {
+            ArrayList<String> args = new ArrayList<>(Arrays.asList(command));
+            args.remove(0);
+            String msg = String.join(" ", args);
+            this.sendChat("&5Broadcast&f", "Broadcast", 0, msg, "CHAT");
+            return true;
+        } else if ((ScuffedUtils.isCommand(commandString, "/sayraw") || ScuffedUtils.isCommand(commandString, "/broadcastraw") || ScuffedUtils.isCommand(commandString, "/bcraw")) && ScuffedUtils.isAdmin(this.server, player.player.name)) {
+            ArrayList<String> args = new ArrayList<>(Arrays.asList(command));
+            args.remove(0);
+            String msg = String.join(" ", args);
+            List players = this.server.getPlayerList();
+            for (int i = 0; i < players.size(); i++) {
+                ((PlayerInstance) players.get(i)).scuffedPlayer.sendColoredChat(msg);
             }
-        } else if ((ScuffedUtils.isCommand(commandString, "/reload") || ScuffedUtils.isCommand(commandString, "/rl"))) {
-            if (ScuffedUtils.isAdmin(this.server, player.player.name)) {
-                DurationTracker durationTracker = new DurationTracker(TimeUnit.MILLISECONDS);
-                this.reloadOverrides();
-                this.discordProperties.reload();
-                player.player.sendChatMessage(String.format(Messages.RELOADED, durationTracker.end()));
-                return true;
-            } else {
-                player.player.sendChatMessage(Messages.NO_PERMISSION);
-                return true;
-            }
+            return true;
         } else if (ScuffedUtils.isCommand(commandString, "/discord") || ScuffedUtils.isCommand(commandString, "/dsc")) {
-            player.player.sendChatMessage(String.format(Messages.JOIN_DISCORD, this.discordProperties.invite));
+            player.sendColoredChat(String.format(Messages.JOIN_DISCORD, this.discordProperties.invite));
             return true;
         } else if (ScuffedUtils.isCommand(commandString, "/rules")) {
             File file = new File("rules.txt");
             if (file.exists()) {
-                player.player.sendChatMessage(Messages.RULES_TITLE);
+                player.sendColoredChat(Messages.RULES_TITLE);
                 try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                     String line;
                     int i = 1;
                     while ((line = reader.readLine()) != null) {
                         if (!line.trim().isEmpty()) {
-                            player.player.sendChatMessage(String.format(Messages.RULES_LINE, i + ".", line));
+                            player.sendColoredChat(String.format(Messages.RULES_LINE, i + ".", line));
                             i++;
                         }
                     }
@@ -226,13 +238,19 @@ public class ScuffedServer {
                 }
                 return true;
             }
+        } else if (ScuffedUtils.isCommand(commandString, "/playerlist") || ScuffedUtils.isCommand(commandString, "/players") || ScuffedUtils.isCommand(commandString, "/list")) {
+            player.sendColoredChat(String.format(Messages.ONLINE_PLAYERS, this.getPlayers()));
+            return true;
+        } if (((ScuffedUtils.isCommand(commandString, "/sponge") || ScuffedUtils.isCommand(commandString, "/drain") || ScuffedUtils.isCommand(commandString, "/reload") || ScuffedUtils.isCommand(commandString, "/rl") || ScuffedUtils.isCommand(commandString, "/say") || ScuffedUtils.isCommand(commandString, "/broadcast") || ScuffedUtils.isCommand(commandString, "/bc") || ScuffedUtils.isCommand(commandString, "/sayraw") || ScuffedUtils.isCommand(commandString, "/broadcastraw") || ScuffedUtils.isCommand(commandString, "/bcraw")) && (!ScuffedUtils.isAdmin(this.server, player.player.name))) || ScuffedUtils.isCommand(commandString, "/op") || ScuffedUtils.isCommand(commandString, "/deop")) {
+            player.sendColoredChat(Messages.NO_PERMISSION);
+            return true;
         }
         return false;
     }
 
     public void login(ScuffedPlayer player, boolean alert) {
         player.loggedIn = true;
-        if (alert) player.player.sendChatMessage(Messages.LOGIN_SUCCESS);
+        if (alert) player.sendColoredChat(Messages.LOGIN_SUCCESS);
         this.server.sendPacket(Packet.CHAT_MESSAGE,
                 new Object[] { Integer.valueOf(-1), String.format(Messages.JOINED_GAME, player.player.name) });
         
@@ -262,7 +280,7 @@ public class ScuffedServer {
 
     public static boolean chatLoggedIn(ScuffedPlayer player, String message) {
 		if (!player.loggedIn && ScuffedUtils.isLoginCommand(message) == 0) {
-		    player.player.sendChatMessage(Messages.NOT_LOGGED_IN);
+		    player.sendColoredChat(Messages.NOT_LOGGED_IN);
             return false;
         }
 
