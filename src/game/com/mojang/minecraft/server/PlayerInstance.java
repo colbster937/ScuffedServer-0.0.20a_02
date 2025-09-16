@@ -147,9 +147,11 @@ public final class PlayerInstance {
 					} else {
 						this.onlyIP = true;
 						this.name = var3;
-						/* THE FOLLOWING 2 LINES HAVE BEEN ADDED FOR SCUFFEDSERVER */
-						this.scuffedPlayer.clearChat();
-						this.scuffedPlayer.remindLogin(true);
+						/* THE FOLLOWING 4 LINES HAVE BEEN ADDED FOR SCUFFEDSERVER */
+						if (this.scuffedPlayer.server.authSystem) {
+							this.scuffedPlayer.clearChat();
+							this.scuffedPlayer.remindLogin(true);
+						}
 						this.connection.sendPacket(Packet.LOGIN, new Object[]{Byte.valueOf((byte)6), this.minecraft.serverName, this.minecraft.motd, Integer.valueOf(this.minecraft.admins.containsPlayer(var3) ? 100 : 0)});
 						Level var9 = this.minecraft.level;
 						byte[] var10 = var9.copyBlocks();
@@ -382,6 +384,8 @@ public final class PlayerInstance {
 			// 		this.connection.sendPacket(Packet.PLAYER_JOIN, new Object[]{Integer.valueOf(var12.playerID), var12.name, Integer.valueOf(var12.x), Integer.valueOf(var12.y), Integer.valueOf(var12.z), Integer.valueOf(var12.yaw), Integer.valueOf(var12.pitch)});
 			// 	}
 			// }
+			/* THE FOLLOWING LINE HAS BEEN ADDED FOR SCUFFEDSERVER */
+			if (this.scuffedPlayer.server.authSystem) this.scuffedPlayer.server.login(this.scuffedPlayer, false);
 
 			this.sendingPackets = true;
 			var19 = 0;
