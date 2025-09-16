@@ -56,9 +56,8 @@ public final class PlayerInstance {
 		this.z = (var4.zSpawn << 5) + 16;
 		this.yaw = (int)(var4.rotSpawn * 256.0F / 360.0F);
 		this.pitch = 0;
-		/* THE FOLLOWING 2 LINES HAVE BEEN ADDED FOR SCUFFEDSERVER */
+		/* THE FOLLOWING LINE HAS BEEN ADDED FOR SCUFFEDSERVER */
 		this.scuffedPlayer = new ScuffedPlayer(this);
-		this.scuffedPlayer.remindLogin(true);
 	}
 
 	public final String toString() {
@@ -148,6 +147,9 @@ public final class PlayerInstance {
 					} else {
 						this.onlyIP = true;
 						this.name = var3;
+						/* THE FOLLOWING 2 LINES HAVE BEEN ADDED FOR SCUFFEDSERVER */
+						this.scuffedPlayer.clearChat();
+						this.scuffedPlayer.remindLogin(true);
 						this.connection.sendPacket(Packet.LOGIN, new Object[]{Byte.valueOf((byte)6), this.minecraft.serverName, this.minecraft.motd, Integer.valueOf(this.minecraft.admins.containsPlayer(var3) ? 100 : 0)});
 						Level var9 = this.minecraft.level;
 						byte[] var10 = var9.copyBlocks();

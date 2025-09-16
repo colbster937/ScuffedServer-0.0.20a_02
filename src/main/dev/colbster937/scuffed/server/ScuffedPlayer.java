@@ -29,7 +29,7 @@ public class ScuffedPlayer {
     public void remindLogin(boolean force) {
 	    if (!this.loggedIn) {
             if ((System.currentTimeMillis() - this.loginRemindTime >= 5000L) || force) {
-                if (ScuffedUtils.isRegistered(this.player.name)) {
+                if (ScuffedUtils.isRegistered(this)) {
                     this.sendColoredChat(Messages.LOGIN_REMINDER);
                 } else {
                     this.sendColoredChat(Messages.REGISTER_REMINDER);
@@ -50,5 +50,11 @@ public class ScuffedPlayer {
 
     public void sendColoredChat(String message) {
         this.player.sendPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(0), message});
+    }
+
+    public void clearChat() {
+        for (int i = 0; i < 50; i++) {
+            this.player.sendChatMessage(" ");
+        }
     }
 }

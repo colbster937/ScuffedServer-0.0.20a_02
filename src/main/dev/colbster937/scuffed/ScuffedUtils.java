@@ -33,6 +33,11 @@ public class ScuffedUtils {
         return file.exists();
     }
 
+    public static boolean isRegistered(ScuffedPlayer player) {
+        player.registered = isRegistered(player.player.name);
+        return player.registered;
+    }
+
     public static boolean isAdmin(MinecraftServer mc, String player) {
         return mc.admins.containsPlayer(player);
     }
