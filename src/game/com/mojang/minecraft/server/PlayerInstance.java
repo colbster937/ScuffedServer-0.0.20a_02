@@ -178,10 +178,12 @@ public final class PlayerInstance {
 			}
 
 			if(var1.startsWith("/")) {
-				/* THE FOLLOWING 2 LINES HAVE BEEN MODIFIED FOR SCUFFEDSERVER */
-				if(this.minecraft.admins.containsPlayer(this.name) || ScuffedUtils.isLoginCommand(var1) > 0) {
-					ScuffedMinecraftServer.getThis().handleCommand(this, var1);
-				} else {
+				/* THE FOLLOWING LINE HAS BEEN ADDED FOR SCUFFEDSERVER */
+				boolean handled = ScuffedMinecraftServer.getInstance().handleCommand(this.scuffedPlayer, var1);
+				/* THE FOLLOWING 3 LINES HAVE BEEN MODIFIED FOR SCUFFEDSERVER */
+				if(ScuffedUtils.isAdmin(minecraft, this.scuffedPlayer) && !handled) {
+					this.minecraft.parseCommand(this, var1.substring(1));
+				} else if (!handled) {
 					this.sendPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(-1), "You\'re not a server admin!"});
 				}
 			} else {

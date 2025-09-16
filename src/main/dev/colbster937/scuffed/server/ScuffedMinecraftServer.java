@@ -8,6 +8,7 @@ import com.mojang.minecraft.server.MinecraftServer;
 import com.mojang.minecraft.server.PlayerInstance;
 
 import dev.colbster937.scuffed.ScuffedServer;
+import dev.colbster937.scuffed.ScuffedUtils;
 
 public class ScuffedMinecraftServer extends MinecraftServer {
     public static Logger logger = Logger.getLogger("MinecraftServer");
@@ -56,5 +57,9 @@ public class ScuffedMinecraftServer extends MinecraftServer {
 
     public void sendPlayerPacketLoggedIn(ScuffedPlayer player, Packet packet, Object... data) {
         if (player.loggedIn) this.sendPlayerPacket(player.player, packet, data);
+    }
+
+    public Object get(String name) {
+        return ScuffedUtils.getField(this, name);
     }
 }

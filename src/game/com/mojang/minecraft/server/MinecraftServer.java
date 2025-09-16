@@ -7,6 +7,7 @@ import com.mojang.minecraft.level.LevelIO;
 import com.mojang.minecraft.level.levelgen.LevelGen;
 import com.mojang.minecraft.net.Packet;
 
+import dev.colbster937.scuffed.ProxyProtocol;
 /* THE FOLLOWING IMPORT HAS BEEN ADDED FOR SCUFFEDSERVER */
 import dev.colbster937.scuffed.server.ScuffedMinecraftServer;
 
@@ -368,6 +369,8 @@ public class MinecraftServer implements Runnable {
 				try {
 					var14.configureBlocking(false);
 					SocketConnection var2 = new SocketConnection(var14);
+					/* THE FOLLOWING LINE HAS BEEN ADDED FOR SCUFFEDSERVER */
+					var2.ip = ProxyProtocol.fromChannel(var14, var2.readBuffer).realIp;
 					var13.connectionList.add(var2);
 					SocketConnection var4 = var2;
 					var3 = var13.minecraft;

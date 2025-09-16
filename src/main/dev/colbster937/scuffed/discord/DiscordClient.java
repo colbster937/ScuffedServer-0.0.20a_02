@@ -6,7 +6,6 @@ import java.util.EnumSet;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.http.HttpClient;
 
 import dev.colbster937.scuffed.Messages;
 import dev.colbster937.scuffed.ScuffedServer;
@@ -23,7 +22,6 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 public class DiscordClient extends ListenerAdapter {
-  private HttpClient http = HttpClient.newHttpClient();
   private ScuffedServer server;
   private DiscordProperties properties;
   private JDA jda;
@@ -34,6 +32,7 @@ public class DiscordClient extends ListenerAdapter {
   }
 
   public void start() throws Exception {
+    if (!this.properties.enabled) return;
     jda = JDABuilder.createDefault(
         properties.token,
         GatewayIntent.GUILD_MESSAGES,
@@ -53,11 +52,13 @@ public class DiscordClient extends ListenerAdapter {
   }
 
   public void stop() {
+    if (!this.properties.enabled) return;
     if (jda != null) jda.shutdownNow();
   }
 
   @Override
   public void onMessageReceived(MessageReceivedEvent e) {
+    if (!this.properties.enabled) return;
     if (e.getAuthor().isBot()) return;
     if (e.getChannel().getId().equals(properties.channel)) {
       String message = e.getMessage().getContentDisplay();
@@ -71,6 +72,7 @@ public class DiscordClient extends ListenerAdapter {
   }
 
   public void sendMessage(String content) {
+    if (!this.properties.enabled) return;
     TextChannel ch = jda.getTextChannelById(properties.channel);
     if (ch != null) {
       MessageCreateBuilder mb = new MessageCreateBuilder()
@@ -81,6 +83,7 @@ public class DiscordClient extends ListenerAdapter {
   }
 
   public void sendWebhook(String message, String username) {
+    if (!this.properties.enabled) return;
     if (properties.webhook == null || properties.webhook.isEmpty()) {
       return;
     }
@@ -118,6 +121,7 @@ public class DiscordClient extends ListenerAdapter {
   }
 
   public void send(String name, String message) {
+    if (!this.properties.enabled) return;
     try {
       if (properties.webhook != null && !properties.webhook.isEmpty()) {
         sendWebhook(message, name);
@@ -151,6 +155,7 @@ public class DiscordClient extends ListenerAdapter {
   }
 
   public void sendJoinLeave(String username, boolean type) {
+    if (!this.properties.enabled) return;
     TextChannel ch = jda.getTextChannelById(properties.channel);
     if (ch == null) return;
 

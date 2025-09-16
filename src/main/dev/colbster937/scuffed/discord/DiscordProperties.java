@@ -15,6 +15,7 @@ public class DiscordProperties {
   public String webhook;
   public String avatar;
   public boolean webhookType;
+  public boolean enabled;
 
   public DiscordProperties(Logger logger) {
     this.logger = logger;
@@ -33,10 +34,12 @@ public class DiscordProperties {
       this.channel = this.properties.getProperty("chat-channel", "000000000000000000").toString();
       this.invite = this.properties.getProperty("server-invite", "https://discord.gg/changethisintheproperties").toString();
       this.webhookType = Boolean.parseBoolean(this.properties.getProperty("webhook-type", "true"));
+      this.enabled = Boolean.parseBoolean(this.properties.getProperty("enabled", "false"));
       this.properties.setProperty("bot-token", this.token);
       this.properties.setProperty("chat-channel", this.channel);
       this.properties.setProperty("server-invite", this.invite);
       this.properties.setProperty("webhook-type", "" + this.webhookType);
+      this.properties.setProperty("enabled", "" + this.enabled);
     } catch (Exception e) {
       logger.warning("discord.properties is broken! Delete it or fix it!");
       System.exit(0);

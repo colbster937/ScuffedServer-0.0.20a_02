@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -13,11 +14,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.security.SecureRandom;
 
 import com.mojang.minecraft.server.PlayerInstance;
+import com.mojang.minecraft.server.PlayerList;
 
 import dev.colbster937.scuffed.discord.DiscordClient;
 import dev.colbster937.scuffed.discord.DiscordProperties;
+import dev.colbster937.scuffed.heartbeat.HeartbeatProperties;
+import dev.colbster937.scuffed.heartbeat.HeartbeatPumper;
 import dev.colbster937.scuffed.password.PasswordHasher;
 import dev.colbster937.scuffed.server.ScuffedMinecraftServer;
 import dev.colbster937.scuffed.server.ScuffedPlayer;
@@ -29,8 +34,10 @@ public class ScuffedServer {
     private static Logger logger;
     private Properties properties = new Properties();
     private ScuffedMinecraftServer server;
+    private String salt;
     public DiscordClient discordClient;
     public DiscordProperties discordProperties;
+    public HeartbeatProperties heartbeatProperties;
     public boolean authSystem = true;
     public boolean antiCheat = true;
     public boolean liquidFlow = true;
@@ -42,6 +49,8 @@ public class ScuffedServer {
 
     private static String serverVersion = "0.0.20a_02";
     private static String scuffedVersion = "0.1";
+    private static String serverSoftware = "ScuffedServer";
+    private static String serverString = serverSoftware + " " + scuffedVersion + " (" + serverVersion + ")";
 
     public ScuffedServer(ScuffedMinecraftServer server) {
         DurationTracker loadTime = new DurationTracker(TimeUnit.MILLISECONDS);
@@ -49,14 +58,18 @@ public class ScuffedServer {
         this.server = server;
 
         logger = ScuffedMinecraftServer.logger;
+        
+        this.salt = generateSalt();
 
-        logger.info("Loading ScuffedServer " + scuffedVersion + " (" + serverVersion + ")");
+        logger.info("Loading " + serverString);
 
         this.reloadOverrides();
 
         this.discordProperties = new DiscordProperties(logger);
+        this.heartbeatProperties = new HeartbeatProperties(logger);
 
         this.discordProperties.reload();
+        this.heartbeatProperties.reload();
 
         this.discordClient = new DiscordClient(this);
 
@@ -68,9 +81,12 @@ public class ScuffedServer {
             }
         }
 
-        logger.info("ScuffedServer loaded in " + loadTime.end());
+        logger.info(serverSoftware + " loaded in " + loadTime.end());
 
         this.discordClient.sendMessage(Messages.SERVER_STARTED);
+
+        HeartbeatPumper pumper = new HeartbeatPumper(this.heartbeatProperties);
+        pumper.start();
     }
 
     public void reloadOverrides() {
@@ -147,7 +163,7 @@ public class ScuffedServer {
                 return true;
             }
             if (command.length != 3) {
-                player.sendColoredChat("Usage: " + command[0] + " <password> <password>");
+                player.sendColoredChat("&eUsage: " + command[0] + " <password> <password>");
                 return true;
             }
             if (!command[1].equals(command[2])) {
@@ -172,7 +188,7 @@ public class ScuffedServer {
                 return true;
             }
             if (command.length != 2) {
-                player.sendColoredChat("Usage: " + command[0] + " <password>");
+                player.sendColoredChat("&eUsage: " + command[0] + " <password>");
                 return true;
             }
             try {
@@ -200,6 +216,8 @@ public class ScuffedServer {
             DurationTracker durationTracker = new DurationTracker(TimeUnit.MILLISECONDS);
             this.reloadOverrides();
             this.discordProperties.reload();
+            this.heartbeatProperties.reload();
+            server.admins = new PlayerList("Admins", new File("admins.txt"));
             player.sendColoredChat(String.format(Messages.RELOADED, durationTracker.end()));
             return true;
         } else if ((ScuffedUtils.isCommand(commandString, "/say") || ScuffedUtils.isCommand(commandString, "/broadcast") || ScuffedUtils.isCommand(commandString, "/bc")) && ScuffedUtils.isAdmin(this.server, player.player.name)) {
@@ -317,5 +335,47 @@ public class ScuffedServer {
             .collect(Collectors.joining(", ")).toString();
 
         return joined.isEmpty() ? "None" : joined;
+    }
+
+	public static String getHeartbeat() {
+		try {
+            int port = ScuffedMinecraftServer.getInstance().heartbeatProperties.frontendPort;
+            if (port < 0 || port > 65535) {
+                port = (int) ScuffedMinecraftServer.getThis().get("port");
+            }
+            return
+                "&port="     + port +
+                "&max="      + ScuffedMinecraftServer.getInstance().maxPlayers +
+                "&name="     + URLEncoder.encode(ScuffedMinecraftServer.getThis().serverName, "UTF-8") +
+                "&public="   + ScuffedMinecraftServer.getThis().get("isPublic") +
+                "&version=6" +
+                "&salt="     + ScuffedMinecraftServer.getInstance().salt +
+                "&users="    + ScuffedMinecraftServer.getThis().getPlayerList().size() +
+                "&software=" + URLEncoder.encode("&d" + serverString, "UTF-8") +
+                "&web="      + "true";
+		} catch (Exception var4) {
+			var4.printStackTrace();
+			throw new RuntimeException("Failed to assemble heartbeat! This is pretty fatal");
+		}
+	}
+
+    public static String generateSalt() {
+        SecureRandom rng = new SecureRandom();
+        char[] str = new char[32];
+        byte[] one = new byte[1];
+
+        for (int i = 0; i < str.length; ) {
+            rng.nextBytes(one);
+            char c = (char) (one[0] & 0xFF);
+            if (!acceptableSaltChar(c)) continue;
+            str[i++] = c;
+        }
+        return new String(str);
+    }
+
+    private static boolean acceptableSaltChar(char c) {
+        return (c >= 'a' && c <= 'z') 
+            || (c >= 'A' && c <= 'Z') 
+            || (c >= '0' && c <= '9');
     }
 }
