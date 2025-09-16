@@ -385,7 +385,7 @@ public final class PlayerInstance {
 			// 	}
 			// }
 			/* THE FOLLOWING LINE HAS BEEN ADDED FOR SCUFFEDSERVER */
-			if (this.scuffedPlayer.server.authSystem) this.scuffedPlayer.server.login(this.scuffedPlayer, false);
+			if (!this.scuffedPlayer.server.authSystem) this.scuffedPlayer.server.login(this.scuffedPlayer, false);
 
 			this.sendingPackets = true;
 			var19 = 0;

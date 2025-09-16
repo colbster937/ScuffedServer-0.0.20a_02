@@ -312,7 +312,11 @@ public class ScuffedServer {
 
     public void sendChat(PlayerInstance player, String message) {
         boolean admin = ScuffedUtils.isAdmin(this.server, player.name);
-        if (player.scuffedPlayer.loggedIn) this.sendChat(admin ? ("&c" + player.name + "&f") : player.name, player.name, player.playerID, message, "CHAT");
+        if (player.scuffedPlayer.loggedIn) {
+            this.sendChat(admin ? ("&c" + player.name + "&f") : player.name, player.name, player.playerID, message, "CHAT");
+        } else {
+            player.scuffedPlayer.sendColoredChat(Messages.NOT_LOGGED_IN);
+        }
     }
 
     public void sendChat(String playerDisplay, String playerName, int playerID, String message, String messageType) {
