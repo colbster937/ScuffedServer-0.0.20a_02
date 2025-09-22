@@ -71,6 +71,8 @@ public class ScuffedServer {
         this.discordProperties.reload();
         this.heartbeatProperties.reload();
 
+        ChatFilter.reloadFilter();
+
         this.discordClient = new DiscordClient(this);
 
         if (this.discordProperties.token != "BOTTOKEN") {
@@ -152,12 +154,12 @@ public class ScuffedServer {
     }
 
     public boolean handleCommand(ScuffedPlayer player, String commandString) {
-		if (!player.loggedIn && ScuffedUtils.isLoginCommand(commandString) == 0) {
+		if (player != null && !player.loggedIn && ScuffedUtils.isLoginCommand(commandString) == 0) {
 		    player.sendColoredChat(Messages.NOT_LOGGED_IN);
             return true;
         }
         String[] command = commandString.split(" ");
-        if (ScuffedUtils.isLoginCommand(commandString) == 2) {
+        if (ScuffedUtils.isLoginCommand(commandString) == 2 && player != null) {
             if (ScuffedUtils.isRegistered(player.player.name)) {
                 player.sendColoredChat(Messages.ALREADY_REGISTERED);
                 return true;
@@ -182,7 +184,7 @@ public class ScuffedServer {
                 player.sendColoredChat(Messages.REGISTER_FAIL);
             }
             return true;
-        } else if (ScuffedUtils.isLoginCommand(commandString) == 1) {
+        } else if (ScuffedUtils.isLoginCommand(commandString) == 1 && player != null) {
             if (player.loggedIn) {
                 player.sendColoredChat(Messages.ALREADY_LOGGED_IN);
                 return true;
@@ -207,16 +209,17 @@ public class ScuffedServer {
                 player.sendColoredChat(Messages.LOGIN_FAIL);
             }
             return true;
-        } else if ((ScuffedUtils.isCommand(commandString, "/sponge") || ScuffedUtils.isCommand(commandString, "/drain")) && ScuffedUtils.isAdmin(this.server, player.player.name)) {
+        } else if ((ScuffedUtils.isCommand(commandString, "/sponge") || ScuffedUtils.isCommand(commandString, "/drain")) && player != null && ScuffedUtils.isAdmin(this.server, player.player.name)) {
             DurationTracker durationTracker = new DurationTracker(TimeUnit.MILLISECONDS);
             int count = 0;
             player.sendColoredChat(String.format(Messages.DRAIN_DONE, count, durationTracker.end()));
             return true;
-        } else if ((ScuffedUtils.isCommand(commandString, "/reload") || ScuffedUtils.isCommand(commandString, "/rl")) && ScuffedUtils.isAdmin(this.server, player.player.name)) {
+        } else if ((ScuffedUtils.isCommand(commandString, "/reload") || ScuffedUtils.isCommand(commandString, "/rl")) && player != null && ScuffedUtils.isAdmin(this.server, player.player.name)) {
             DurationTracker durationTracker = new DurationTracker(TimeUnit.MILLISECONDS);
             this.reloadOverrides();
             this.discordProperties.reload();
             this.heartbeatProperties.reload();
+            ChatFilter.reloadFilter();
             server.admins = new PlayerList("Admins", new File("admins.txt"));
             player.sendColoredChat(String.format(Messages.RELOADED, durationTracker.end()));
             return true;
@@ -235,10 +238,10 @@ public class ScuffedServer {
                 ((PlayerInstance) players.get(i)).scuffedPlayer.sendColoredChat(msg);
             }
             return true;
-        } else if (ScuffedUtils.isCommand(commandString, "/discord") || ScuffedUtils.isCommand(commandString, "/dsc")) {
+        } else if (ScuffedUtils.isCommand(commandString, "/discord") || ScuffedUtils.isCommand(commandString, "/dsc") && player != null) {
             player.sendColoredChat(String.format(Messages.JOIN_DISCORD, this.discordProperties.invite));
             return true;
-        } else if (ScuffedUtils.isCommand(commandString, "/rules")) {
+        } else if (ScuffedUtils.isCommand(commandString, "/rules") && player != null) {
             File file = new File("rules.txt");
             if (file.exists()) {
                 player.sendColoredChat(Messages.RULES_TITLE);
@@ -256,10 +259,10 @@ public class ScuffedServer {
                 }
                 return true;
             }
-        } else if (ScuffedUtils.isCommand(commandString, "/playerlist") || ScuffedUtils.isCommand(commandString, "/players") || ScuffedUtils.isCommand(commandString, "/list")) {
+        } else if (ScuffedUtils.isCommand(commandString, "/playerlist") || ScuffedUtils.isCommand(commandString, "/players") || ScuffedUtils.isCommand(commandString, "/list") && player != null) {
             player.sendColoredChat(String.format(Messages.ONLINE_PLAYERS, this.getPlayers()));
             return true;
-        } if (((ScuffedUtils.isCommand(commandString, "/sponge") || ScuffedUtils.isCommand(commandString, "/drain") || ScuffedUtils.isCommand(commandString, "/reload") || ScuffedUtils.isCommand(commandString, "/rl") || ScuffedUtils.isCommand(commandString, "/say") || ScuffedUtils.isCommand(commandString, "/broadcast") || ScuffedUtils.isCommand(commandString, "/bc") || ScuffedUtils.isCommand(commandString, "/sayraw") || ScuffedUtils.isCommand(commandString, "/broadcastraw") || ScuffedUtils.isCommand(commandString, "/bcraw")) && (!ScuffedUtils.isAdmin(this.server, player.player.name))) || ScuffedUtils.isCommand(commandString, "/op") || ScuffedUtils.isCommand(commandString, "/deop")) {
+        } if (((ScuffedUtils.isCommand(commandString, "/sponge") || ScuffedUtils.isCommand(commandString, "/drain") || ScuffedUtils.isCommand(commandString, "/reload") || ScuffedUtils.isCommand(commandString, "/rl") || ScuffedUtils.isCommand(commandString, "/say") || ScuffedUtils.isCommand(commandString, "/broadcast") || ScuffedUtils.isCommand(commandString, "/bc") || ScuffedUtils.isCommand(commandString, "/sayraw") || ScuffedUtils.isCommand(commandString, "/broadcastraw") || ScuffedUtils.isCommand(commandString, "/bcraw")) && (!ScuffedUtils.isAdmin(this.server, player.player.name))) || ((ScuffedUtils.isCommand(commandString, "/op") || ScuffedUtils.isCommand(commandString, "/deop")) && player != null)) {
             player.sendColoredChat(Messages.NO_PERMISSION);
             return true;
         }
@@ -320,13 +323,14 @@ public class ScuffedServer {
     }
 
     public void sendChat(String playerDisplay, String playerName, int playerID, String message, String messageType) {
-        logger.info("[" + messageType + "] " + String.format(Messages.CHAT_FORMAT, playerName, message));
-        this.server.sendLoggedInPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(playerID), String.format(Messages.CHAT_FORMAT, playerDisplay, message)});
+        String msg = ChatFilter.filterMessage(message);
+        logger.info("[" + messageType + "] " + String.format(Messages.CHAT_FORMAT, playerName, msg));
+        this.server.sendLoggedInPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(playerID), String.format(Messages.CHAT_FORMAT, playerDisplay, msg)});
         if (messageType != "DISCORD") {
             if (discordProperties.webhookType) {
-                this.discordClient.send(playerName, message);
+                this.discordClient.send(playerName, msg);
             } else {
-                this.discordClient.sendMessage(String.format(Messages.DISCORD_CHAT_FORMAT, playerName, message));
+                this.discordClient.sendMessage(String.format(Messages.DISCORD_CHAT_FORMAT, playerName, msg));
             }
         }
     }
