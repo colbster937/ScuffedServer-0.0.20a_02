@@ -1,11 +1,12 @@
 plugins { 
     application
     java
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "9.1.0"
 }
 
 group = "com.mojang.minecraft"
 version = "1.0.0"
+val main = "dev.colbster937.scuffed.server.ScuffedMinecraftServer"
 
 java {
     toolchain {
@@ -29,7 +30,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("dev.colbster937.scuffed.server.ScuffedMinecraftServer")
+    mainClass.set(main)
 }
 
 tasks.jar {
@@ -39,7 +40,7 @@ tasks.jar {
 tasks.shadowJar {
     archiveFileName.set("server.jar")
     manifest {
-        attributes["Main-Class"] = "dev.colbster937.scuffed.server.ScuffedMinecraftServer"
+        attributes["Main-Class"] = main
     }
 }
 
