@@ -5,6 +5,8 @@ import java.io.FileWriter;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import dev.colbster937.scuffed.utils.Port;
+
 public class HeartbeatProperties {
   private Logger logger;
   private Properties properties = new Properties();
@@ -27,7 +29,7 @@ public class HeartbeatProperties {
     try {
       this.heartbeatProxy = this.properties.getProperty("heartbeat-proxy", "").toString();
       this.sendClassicubeHeartbeat = Boolean.parseBoolean(this.properties.getProperty("classicube-heartbeat", "false"));
-      this.frontendPort = Integer.parseInt(this.properties.getProperty("frontend-port", "-1"));
+      this.frontendPort = Port.parsePort(this.properties.getProperty("frontend-port", "-1"));
       this.properties.setProperty("classicube-heartbeat", "" + this.sendClassicubeHeartbeat);
       this.properties.setProperty("heartbeat-proxy", "" + this.heartbeatProxy);
       this.properties.setProperty("frontend-port", "" + this.frontendPort);

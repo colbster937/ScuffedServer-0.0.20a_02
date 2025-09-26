@@ -38,10 +38,9 @@ public class Heartbeat {
         }
     }
     
-    public void pump() {
-        String content = ScuffedServer.getHeartbeat();
-
+    public String pump(String content) {
         for (int i = 0; i < MAX_RETRIES; i++) {
+            StringBuilder response = new StringBuilder();
             try {
                 HttpURLConnection conn = (HttpURLConnection) (
                     proxy != null ? url.openConnection(proxy) : url.openConnection()
@@ -59,7 +58,6 @@ public class Heartbeat {
                 out.flush();
                 out.close();
                 try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                    StringBuilder response = new StringBuilder();
                     String line;
                     while ((line = in.readLine()) != null) {
                         response.append(line);
@@ -70,10 +68,11 @@ public class Heartbeat {
                     Files.write(outFile, response.toString().getBytes(StandardCharsets.UTF_8));
                 }
                 conn.disconnect();
-                return;
+                return response.toString().trim();
             } catch (Exception ex) {
                 continue;
             }
         }
+        return null;
     }
 }

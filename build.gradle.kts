@@ -27,6 +27,7 @@ repositories {
 dependencies {
     implementation("org.slf4j:slf4j-nop:2.0.13")
     implementation("net.dv8tion:JDA:5.0.0-beta.24")
+    implementation("com.google.code.gson:gson:2.11.0")
 }
 
 application {

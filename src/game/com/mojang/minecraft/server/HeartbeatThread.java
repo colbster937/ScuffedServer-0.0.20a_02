@@ -36,18 +36,19 @@ final class HeartbeatThread extends Thread {
 			var9.writeBytes(this.content);
 			var9.flush();
 			var9.close();
-			BufferedReader var10 = new BufferedReader(new InputStreamReader(var1.getInputStream()));
-			String var3 = var10.readLine();
-			if(!MinecraftServer.b(this.minecraft).equals(var3)) {
-				MinecraftServer.logger.info("To connect directly to this server, surf to: " + var3);
-				PrintWriter var4 = new PrintWriter(new FileWriter("externalurl.txt"));
-				var4.println(var3);
-				var4.close();
-				MinecraftServer.logger.info("(This is also in externalurl.txt)");
-				MinecraftServer.a(this.minecraft, var3);
-			}
+			/* THE FOLLOWING 11 LINES HAVE BEEN MODIFIED FOR SCUFFEDSERVER */
+			// BufferedReader var10 = new BufferedReader(new InputStreamReader(var1.getInputStream()));
+			// String var3 = var10.readLine();
+			// if(!MinecraftServer.b(this.minecraft).equals(var3)) {
+			//	MinecraftServer.logger.info("To connect directly to this server, surf to: " + var3);
+			//	PrintWriter var4 = new PrintWriter(new FileWriter("externalurl.txt"));
+			//	var4.println(var3);
+			//	var4.close();
+			//	MinecraftServer.logger.info("(This is also in externalurl.txt)");
+			//	MinecraftServer.a(this.minecraft, var3);
+			// }
 
-			var10.close();
+			// var10.close();
 			return;
 		} catch (Exception var7) {
 			MinecraftServer.logger.severe("Failed to assemble heartbeat: " + var7);

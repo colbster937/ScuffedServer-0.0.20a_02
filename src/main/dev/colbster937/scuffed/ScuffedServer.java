@@ -4,12 +4,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.net.URLEncoder;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.file.Files;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -21,11 +24,13 @@ import com.mojang.minecraft.server.PlayerList;
 
 import dev.colbster937.scuffed.discord.DiscordClient;
 import dev.colbster937.scuffed.discord.DiscordProperties;
+import dev.colbster937.scuffed.heartbeat.HeartbeatData;
 import dev.colbster937.scuffed.heartbeat.HeartbeatProperties;
 import dev.colbster937.scuffed.heartbeat.HeartbeatPumper;
 import dev.colbster937.scuffed.password.PasswordHasher;
 import dev.colbster937.scuffed.server.ScuffedMinecraftServer;
 import dev.colbster937.scuffed.server.ScuffedPlayer;
+import dev.colbster937.scuffed.utils.DurationTracker;
 
 import com.mojang.minecraft.level.Level;
 import com.mojang.minecraft.net.Packet;
@@ -33,8 +38,7 @@ import com.mojang.minecraft.net.Packet;
 public class ScuffedServer {
     private static Logger logger;
     private Properties properties = new Properties();
-    private ScuffedMinecraftServer server;
-    private String salt;
+    public ScuffedMinecraftServer server;
     public DiscordClient discordClient;
     public DiscordProperties discordProperties;
     public HeartbeatProperties heartbeatProperties;
@@ -42,15 +46,11 @@ public class ScuffedServer {
     public boolean antiCheat = true;
     public boolean liquidFlow = true;
     public boolean lavaSponge = false;
+    public String publicAddr = "0.0.0.0";
     public String levelSizeStr = "256x64x256";
     public int[] levelSize = ScuffedUtils.getLevelSize(this.levelSizeStr);
     public int maxPlayers = 16;
     public int loginTimeout = 30;
-
-    private static String serverVersion = "0.0.20a_02";
-    private static String scuffedVersion = "0.1";
-    private static String serverSoftware = "ScuffedServer";
-    private static String serverString = serverSoftware + " " + scuffedVersion + " (" + serverVersion + ")";
 
     public ScuffedServer(ScuffedMinecraftServer server) {
         DurationTracker loadTime = new DurationTracker(TimeUnit.MILLISECONDS);
@@ -58,10 +58,8 @@ public class ScuffedServer {
         this.server = server;
 
         logger = ScuffedMinecraftServer.logger;
-        
-        this.salt = generateSalt();
 
-        logger.info("Loading " + serverString);
+        logger.info("Loading " + ScuffedConstants.SERVER_STRING);
 
         this.reloadOverrides();
 
@@ -75,7 +73,7 @@ public class ScuffedServer {
 
         this.discordClient = new DiscordClient(this);
 
-        if (this.discordProperties.token != "BOTTOKEN") {
+        if (!"BOTTOKEN".equals(this.discordProperties.token)) {
             try {
                 this.discordClient.start();
             } catch (Exception e) {
@@ -83,11 +81,11 @@ public class ScuffedServer {
             }
         }
 
-        logger.info(serverSoftware + " loaded in " + loadTime.end());
+        logger.info(ScuffedConstants.SERVER_SOFTWARE + " loaded in " + loadTime.time());
 
         this.discordClient.sendMessage(Messages.SERVER_STARTED);
 
-        HeartbeatPumper pumper = new HeartbeatPumper(this.heartbeatProperties);
+        HeartbeatPumper pumper = new HeartbeatPumper(this);
         pumper.start();
     }
 
@@ -103,6 +101,7 @@ public class ScuffedServer {
             this.antiCheat = Boolean.parseBoolean(this.properties.getProperty("anti-cheat", "true"));
             this.liquidFlow = Boolean.parseBoolean(this.properties.getProperty("liquid-flow", "true"));
             this.lavaSponge = Boolean.parseBoolean(this.properties.getProperty("lava-sponge", "false"));
+            this.publicAddr = this.properties.getProperty("public-addr", "0.0.0.0").toString();
             this.levelSizeStr = this.properties.getProperty("level-size", "256x64x256").toString();
             this.maxPlayers = Integer.parseInt(this.properties.getProperty("max-players", "16"));
             this.loginTimeout = Integer.parseInt(this.properties.getProperty("login-timeout", "30"));
@@ -121,6 +120,7 @@ public class ScuffedServer {
             this.properties.setProperty("anti-cheat", "" + this.antiCheat);
             this.properties.setProperty("liquid-flow", "" + this.liquidFlow);
             this.properties.setProperty("lava-sponge", "" + this.lavaSponge);
+            this.properties.setProperty("public-addr", "" + this.publicAddr);
             this.properties.setProperty("level-size", "" + this.levelSizeStr);
             this.properties.setProperty("max-players", "" + this.maxPlayers);
             this.properties.setProperty("login-timeout", "" + this.loginTimeout);
@@ -140,6 +140,7 @@ public class ScuffedServer {
         logger.info(" * anti-cheat = " + ScuffedUtils.formatEnabledDisabled(this.antiCheat));
         logger.info(" * liquid-flow = " + ScuffedUtils.formatEnabledDisabled(this.liquidFlow));
         logger.info(" * lava-sponge = " + ScuffedUtils.formatEnabledDisabled(this.lavaSponge));
+        logger.info(" * public-addr = " + this.publicAddr.toString());
         logger.info(" * level-size = " + this.levelSizeStr + " (NOT IMPLEMENTED YET)");
         logger.info(" * max-players = " + this.maxPlayers);
         logger.info(" * login-timeout = " + this.loginTimeout);
@@ -212,7 +213,7 @@ public class ScuffedServer {
         } else if ((ScuffedUtils.isCommand(commandString, "/sponge") || ScuffedUtils.isCommand(commandString, "/drain")) && player != null && ScuffedUtils.isAdmin(this.server, player.player.name)) {
             DurationTracker durationTracker = new DurationTracker(TimeUnit.MILLISECONDS);
             int count = 0;
-            player.sendColoredChat(String.format(Messages.DRAIN_DONE, count, durationTracker.end()));
+            player.sendColoredChat(String.format(Messages.DRAIN_DONE, count, durationTracker.time()));
             return true;
         } else if ((ScuffedUtils.isCommand(commandString, "/reload") || ScuffedUtils.isCommand(commandString, "/rl")) && player != null && ScuffedUtils.isAdmin(this.server, player.player.name)) {
             DurationTracker durationTracker = new DurationTracker(TimeUnit.MILLISECONDS);
@@ -221,7 +222,7 @@ public class ScuffedServer {
             this.heartbeatProperties.reload();
             ChatFilter.reloadFilter();
             server.admins = new PlayerList("Admins", new File("admins.txt"));
-            player.sendColoredChat(String.format(Messages.RELOADED, durationTracker.end()));
+            player.sendColoredChat(String.format(Messages.RELOADED, durationTracker.time()));
             return true;
         } else if ((ScuffedUtils.isCommand(commandString, "/say") || ScuffedUtils.isCommand(commandString, "/broadcast") || ScuffedUtils.isCommand(commandString, "/bc")) && ScuffedUtils.isAdmin(this.server, player.player.name)) {
             ArrayList<String> args = new ArrayList<>(Arrays.asList(command));
@@ -297,6 +298,8 @@ public class ScuffedServer {
                                 Integer.valueOf(playerInstance.pitch) });
             }
         }
+
+        HeartbeatData.getInstance().updateInfo();
     }
 
     public static boolean chatLoggedIn(ScuffedPlayer player, String message) {
@@ -311,6 +314,7 @@ public class ScuffedServer {
     public void sendLogout(ScuffedPlayer player) {
         this.server.sendPlayerPacketLoggedIn(player, Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(-1), String.format(Messages.LEFT_GAME, player.player.name)});
         if (!player.player.name.isEmpty() && !player.player.name.isBlank() && player.player.name != null && player.loggedIn) this.discordClient.sendJoinLeave(player.player.name, false);
+        HeartbeatData.getInstance().updateInfo();
     }
 
     public void sendChat(PlayerInstance player, String message) {
@@ -335,55 +339,28 @@ public class ScuffedServer {
         }
     }
 
+    public List getPlayerList() {
+        return (List) server.getPlayerList().stream()
+            .filter(p -> ((PlayerInstance)p).scuffedPlayer != null && ((PlayerInstance)p).scuffedPlayer.loggedIn)
+            .collect(Collectors.toList());
+    }
+
     public String getPlayers() {
-        String joined = server.getPlayerList().stream()
+        String players = server.getPlayerList().stream()
             .map(o -> (PlayerInstance) o)
             .filter(p -> ((PlayerInstance)p).scuffedPlayer != null && ((PlayerInstance)p).scuffedPlayer.loggedIn)
             .map(p -> ((PlayerInstance)p).name)
             .collect(Collectors.joining(", ")).toString();
 
-        return joined.isEmpty() ? "None" : joined;
+        return players.isEmpty() ? "None" : players;
     }
 
-	public static String getHeartbeat() {
-		try {
-            int port = ScuffedMinecraftServer.getInstance().heartbeatProperties.frontendPort;
-            if (port < 0 || port > 65535) {
-                port = (int) ScuffedMinecraftServer.getThis().get("port");
-            }
-            return
-                "&port="     + port +
-                "&max="      + ScuffedMinecraftServer.getInstance().maxPlayers +
-                "&name="     + URLEncoder.encode(ScuffedMinecraftServer.getThis().serverName, "UTF-8") +
-                "&public="   + ScuffedMinecraftServer.getThis().get("isPublic") +
-                "&version=6" +
-                "&salt="     + ScuffedMinecraftServer.getInstance().salt +
-                "&users="    + ScuffedMinecraftServer.getThis().getPlayerList().size() +
-                "&software=" + URLEncoder.encode("&d" + serverString, "UTF-8") +
-                "&web="      + "true";
-		} catch (Exception var4) {
-			var4.printStackTrace();
-			throw new RuntimeException("Failed to assemble heartbeat! This is pretty fatal");
-		}
-	}
-
-    public static String generateSalt() {
-        SecureRandom rng = new SecureRandom();
-        char[] str = new char[32];
-        byte[] one = new byte[1];
-
-        for (int i = 0; i < str.length; ) {
-            rng.nextBytes(one);
-            char c = (char) (one[0] & 0xFF);
-            if (!acceptableSaltChar(c)) continue;
-            str[i++] = c;
+    public int getFrontendPort() {
+        int port = this.heartbeatProperties.frontendPort;
+        if (port >= 0 && port <= 65535) {
+            return port;
+        } else {
+            return (int) ScuffedUtils.getField(this.server, "port");
         }
-        return new String(str);
-    }
-
-    private static boolean acceptableSaltChar(char c) {
-        return (c >= 'a' && c <= 'z') 
-            || (c >= 'A' && c <= 'Z') 
-            || (c >= '0' && c <= '9');
     }
 }

@@ -1,7 +1,6 @@
 package dev.colbster937.scuffed.server;
 
 import java.io.IOException;
-import java.util.Scanner;
 import java.util.logging.Logger;
 
 import com.mojang.minecraft.net.Packet;
@@ -14,7 +13,7 @@ import dev.colbster937.scuffed.ScuffedUtils;
 public class ScuffedMinecraftServer extends MinecraftServer {
     public static Logger logger = Logger.getLogger("MinecraftServer");
 
-    private static Scanner scanner;
+    // private static Scanner scanner;
     private static ScuffedServer staticScuffedServer;
     private static ScuffedMinecraftServer staticScuffedMinecraftServer;
     public ScuffedServer scuffedServer;
