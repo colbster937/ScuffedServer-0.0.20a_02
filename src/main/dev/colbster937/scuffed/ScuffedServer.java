@@ -4,20 +4,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.file.Files;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.security.SecureRandom;
 
 import com.mojang.minecraft.server.PlayerInstance;
 import com.mojang.minecraft.server.PlayerList;
@@ -362,5 +357,9 @@ public class ScuffedServer {
         } else {
             return (int) ScuffedUtils.getField(this.server, "port");
         }
+    }
+
+    public Logger getLogger() {
+        return logger;
     }
 }

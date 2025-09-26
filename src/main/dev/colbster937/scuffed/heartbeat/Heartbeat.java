@@ -12,13 +12,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import dev.colbster937.scuffed.ScuffedServer;
-
 public class Heartbeat {
     private int MAX_RETRIES = 3;
     private String name;
     private URL url;
     private Proxy proxy;
+    private StringBuilder response;
+    public String res;
 
     public Heartbeat(String url, String name, String proxyStr) {
         try {
@@ -40,7 +40,7 @@ public class Heartbeat {
     
     public String pump(String content) {
         for (int i = 0; i < MAX_RETRIES; i++) {
-            StringBuilder response = new StringBuilder();
+            response = new StringBuilder();
             try {
                 HttpURLConnection conn = (HttpURLConnection) (
                     proxy != null ? url.openConnection(proxy) : url.openConnection()
