@@ -11,19 +11,21 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.logging.Logger;
 
 public class Heartbeat {
     private int MAX_RETRIES = 3;
     private String name;
     private URL url;
     private Proxy proxy;
-    private StringBuilder response;
-    public String res;
+    private Logger logger;
+    private String res;
 
-    public Heartbeat(String url, String name, String proxyStr) {
+    public Heartbeat(String url, String name, String proxyStr, Logger logger) {
         try {
             this.url = new URL(url);
             this.name = name;
+            this.logger = logger;
             this.res = "";
 
             if (proxyStr != null && !proxyStr.isEmpty() && !proxyStr.isBlank()) {
@@ -38,10 +40,14 @@ public class Heartbeat {
             e.printStackTrace();
         }
     }
+
+    public Heartbeat(String url, String name, String proxyStr) {
+        this(url, name, proxyStr, null);
+    }
     
     public String pump(String content) {
         for (int i = 0; i < MAX_RETRIES; i++) {
-            response = new StringBuilder();
+            StringBuilder response = new StringBuilder();
             try {
                 HttpURLConnection conn = (HttpURLConnection) (
                     proxy != null ? url.openConnection(proxy) : url.openConnection()
@@ -69,7 +75,12 @@ public class Heartbeat {
                     Files.write(outFile, response.toString().getBytes(StandardCharsets.UTF_8));
                 }
                 conn.disconnect();
-                return response.toString().trim();
+                String res = response.toString().trim();
+                if (!res.isBlank() && !res.equals(this.res) && this.logger != null) {
+                    this.res = res;
+                    logger.info("[" + this.name + "] " + res);
+                }
+                return res;
             } catch (Exception ex) {
                 continue;
             }
