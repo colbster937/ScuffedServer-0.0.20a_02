@@ -24,6 +24,7 @@ public class Heartbeat {
         try {
             this.url = new URL(url);
             this.name = name;
+            this.res = "";
 
             if (proxyStr != null && !proxyStr.isEmpty() && !proxyStr.isBlank()) {
                 String[] parts = proxyStr.split(":");
