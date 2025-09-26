@@ -29,7 +29,7 @@ public class HeartbeatPumper {
                     ScuffedHashMap<String, Object> content = this.data.getInfo();
                     String res;
                     if (properties.sendClassicubeHeartbeat) {
-                        res = classicube.pump(this.data.toV2(content).toQuery());
+                        res = classicube.pump(this.data.toV2(content).toQuery(true));
                         if (res != classicube.res) {
                             classicube.res = res;
                             logger.info("Classicube Heartbeat: " + res);

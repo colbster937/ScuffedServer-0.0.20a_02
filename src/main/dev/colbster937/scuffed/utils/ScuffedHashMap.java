@@ -27,10 +27,10 @@ public class ScuffedHashMap<K, V> extends LinkedHashMap<K, V> {
         return new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().serializeNulls().create().toJson(this);
     }
 
-    public String toQuery() {
+    public String toQuery(boolean q) {
         String query = "";
         for (K key : this.keySet()) {
-            if (!query.isEmpty()) query += "&";
+            if (!query.isEmpty() || q) query += "&";
             else query += "?";
             query += key + "=" + URLEncoder.encode(this.get(key).toString(), StandardCharsets.UTF_8);
         }

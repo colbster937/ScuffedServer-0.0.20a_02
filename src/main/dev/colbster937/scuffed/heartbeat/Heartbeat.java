@@ -47,7 +47,7 @@ public class Heartbeat {
                 );
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                conn.setRequestProperty("Content-Length", "" + Integer.toString(content.getBytes(StandardCharsets.UTF_8).length));
+                conn.setRequestProperty("Content-Length", Integer.toString(content.getBytes(StandardCharsets.UTF_8).length));
 			    conn.setRequestProperty("Content-Language", "en-US");
                 conn.setUseCaches(false);
                 conn.setDoInput(true);
