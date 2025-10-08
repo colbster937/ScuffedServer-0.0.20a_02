@@ -30,9 +30,10 @@ public class HeartbeatData {
         public int port;
         public int maxPlayers;
         public int players;
-        public boolean isPublic;
         public int protocol;
+        public boolean isPublic;
         public boolean web;
+        public long timestamp;
     }
 
     public HeartbeatData(ScuffedServer server) {
@@ -52,9 +53,10 @@ public class HeartbeatData {
         this.info.port = server.getFrontendPort();
         this.info.maxPlayers = this.server.maxPlayers;
         this.info.players = this.server.getPlayerList().size();
-        this.info.isPublic = (boolean) ScuffedUtils.getField(this.server.server, "isPublic");
         this.info.protocol = ScuffedConstants.SERVER_PROTOCOL;
+        this.info.isPublic = (boolean) ScuffedUtils.getField(this.server.server, "isPublic");
         this.info.web = true;
+        this.info.timestamp = System.currentTimeMillis();
 
         return true;
     }
@@ -68,9 +70,10 @@ public class HeartbeatData {
         info.put("port", this.info.port);
         info.put("maxPlayers", this.info.maxPlayers);
         info.put("players", this.info.players);
-        info.put("public", this.info.isPublic);
         info.put("version", this.info.version);
+        info.put("public", this.info.isPublic);
         info.put("web", this.info.web);
+        info.put("timestamp", this.info.timestamp);
         return info;
     }
 
